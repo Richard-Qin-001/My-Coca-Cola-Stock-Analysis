@@ -19,6 +19,7 @@
 训练效果预估：因为没有限制短时间，长期来看股价趋向于常函数，并且2010年有很多突发新闻，这些简易模型是无法获取的，也无法预测。
 
 真实效果：
+
 ![alt text](source\image.png)
 
 效果分析：和预期的一样，模型预期的曲线甚至可以用常函数拟合了，这样的预测是没有效果的。
@@ -68,3 +69,6 @@ Input -> (Batch Size, Sequence Length, Input Size)
     -> Linear Layer (Output Size: 1)
     -> Output -> (Batch Size, 1)
 ```
+
+# 4.规划实现
+用PyTorch重新写了模型。
