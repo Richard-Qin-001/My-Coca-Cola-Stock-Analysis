@@ -9,3 +9,6 @@ if torch.cuda.is_available():
     print("GPU 名称:", torch.cuda.get_device_name(0))
 else:
     print("GPU 不可用")
+
+import tensorflow as tf
+print(tf.__version__)
