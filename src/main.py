@@ -21,7 +21,7 @@ def main():
         train_dataset, 
         batch_size=config.BATCH_SIZE, 
         shuffle=False,
-        num_workers = 4 # 保持 num_workers = 4 的设置
+        num_workers = 4
     )
     test_loader = DataLoader(
         test_dataset,

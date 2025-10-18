@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import torch
 from torch.utils.data import Dataset, DataLoader
+import ta
 
 import config
 
@@ -39,10 +40,19 @@ def load_and_preprocess_data(data_file, start_date):
     df_raw['Date'] = pd.to_datetime(df_raw['Date'], utc=True).dt.tz_convert(None).dt.date
     df_raw.set_index('Date', inplace=True)
 
-    df = df_raw[['Close', 'Volume']].copy()
+    df = df_raw[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
 
-    start_date = '2015-01-01'
+    df['RSI'] = ta.momentum.RSIIndicator(close=df['Close'], window=14, fillna=True).rsi()
+
+    df['SMA_10'] = ta.trend.SMAIndicator(close=df['Close'], window=10, fillna=True).sma_indicator()
+    df['SMA_50'] = ta.trend.SMAIndicator(close=df['Close'], window=50, fillna=True).sma_indicator()
+    macd_indicator = ta.trend.MACD(close=df['Close'], window_slow=26, window_fast=12, window_sign=9, fillna=True)
+    df['MACD'] = macd_indicator.macd()
+    df['MACD_Signal'] = macd_indicator.macd_signal()
+
     df_filtered = df[df.index >= pd.to_datetime(start_date).date()]
+
+    df_final = df_filtered[config.FINAL_FEATURES].copy()
 
     data_matrix = df_filtered.values
 
