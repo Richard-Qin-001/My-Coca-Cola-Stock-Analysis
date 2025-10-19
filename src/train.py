@@ -1,13 +1,27 @@
 import torch
+import torch.nn.utils
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
+def validate_model(model, val_loader, criterion, device):
+    model.eval()
+    total_val_loss = 0
+    with torch.no_grad():
+        for batch_x, batch_y in val_loader:
+            batch_x = batch_x.to(device)
+            batch_y = batch_y.to(device)
+            outputs = model(batch_x)
+            loss = criterion(outputs, batch_y)
+            total_val_loss += loss.item()
+            
+    model.train()
+    return total_val_loss / len(val_loader)
 
-def train_model(model, train_loader, criterion, optimizer, device, num_epochs, start_epoch=0, save_path=None):
+def train_model(model, train_loader, val_loader, criterion, optimizer, device, num_epochs, start_epoch=0, save_path=None, scheduler=None):
     model.train()
     print(f"Start Training on {device}, Epochs: {num_epochs}, Starting from Epoch {start_epoch + 1}")
-    # print(f"Epochs: {num_epochs}")
+    best_val_loss = float('inf')
 
     for epoch in range(num_epochs):
         total_loss = 0
@@ -26,17 +40,26 @@ def train_model(model, train_loader, criterion, optimizer, device, num_epochs, s
             total_loss += loss.item()
         avg_loss = total_loss / len(train_loader)
 
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.6f}")
+        val_loss = validate_model(model, val_loader, criterion, device)
 
-        if save_path:
-            checkpoint = {
-                'epoch': epoch + 1, 
-                'model_state_dict': model.state_dict(), # 模型权重
-                'optimizer_state_dict': optimizer.state_dict(), # 优化器状态
-                'loss': avg_loss,
-            }
-            torch.save(checkpoint, save_path)
-            print(f" -> Checkpoint saved to {save_path}")
+        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {avg_loss:.6f}, Val Loss: {val_loss:.6f}")
+
+        if scheduler is not None:
+            scheduler.step(val_loss)
+
+        if val_loss < best_val_loss:
+            print(f" -> Loss from {best_val_loss:.6f} to {val_loss:.6f}. Saving as Checkpoint.")
+            best_val_loss = val_loss
+
+            if save_path:
+                checkpoint = {
+                    'epoch': epoch + 1,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'best_val_loss': best_val_loss,
+                }
+                torch.save(checkpoint, save_path.replace('.pth', '_best.pth'))
+                print(f" -> Checkpoint saved to {save_path}")
 def evaluate_predict(model, test_loader, scaler, y_test_np, device, scaled_data):
     model.eval() # Evaluate Mode
     test_predictions = []

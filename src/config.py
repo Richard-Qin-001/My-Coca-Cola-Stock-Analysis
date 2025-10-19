@@ -11,6 +11,7 @@ CHECKPOINT_PATH = os.path.join(MODEL_ROOT, 'ko_lstm_checkpoint.pth')
 
 SEQUENCE_LENGTH = 60
 TRAIN_RATIO = 0.8
+VALIDATION_RATIO = 0.1
 BATCH_SIZE = 32
 FINAL_FEATURES = ['Close', 'Volume', 'RSI', 'SMA_10', 'SMA_50', 'MACD', 'MACD_Signal']
 
@@ -20,4 +21,9 @@ OUTPUT_SIZE = 1
 DROPOUT = 0.2
 
 LEARNING_RATE = 0.001
-NUM_EPOCHS = 20
+NUM_EPOCHS = 30
+
+# ReduceLROnPlateau
+LR_PATIENCE = 5
+LR_FACTOR = 0.5
+LR_MIN = 1e-6

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import os
 
 import config
@@ -10,7 +11,7 @@ from train import train_model, evaluate_predict
 
 def main():
     print("Data Preparation...")
-    train_dataset, test_dataset, scaler, scaled_data, input_size, y_test_np = load_and_preprocess_data(
+    train_dataset, val_dataset, test_dataset, scaler, scaled_data, input_size, y_test_np = load_and_preprocess_data(
         config.DATA_FILE, config.START_DATE
     )
     
@@ -23,6 +24,12 @@ def main():
         shuffle=False,
         num_workers = 4
     )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=config.BATCH_SIZE,
+        shuffle=False,
+        num_workers = 4
+        )
     test_loader = DataLoader(
         test_dataset,
         batch_size=config.BATCH_SIZE,
@@ -47,6 +54,15 @@ def main():
     criterion = nn.MSELoss()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
+
+    scheduler = ReduceLROnPlateau(
+        optimizer, 
+        mode='min',
+        factor=config.LR_FACTOR,
+        patience=config.LR_PATIENCE,
+        min_lr=config.LR_MIN,
+        # verbose=True
+    )
 
     print(f"Input Size: {input_size}")
     print(f"Hidden Size: {config.HIDDEN_SIZE}")
@@ -76,7 +92,7 @@ def main():
         start_epoch = 0
 
     print("\nTraining and Evaluation...")
-    train_model(model, train_loader, criterion, optimizer, device, config.NUM_EPOCHS, start_epoch, checkpoint_path)
+    train_model(model, train_loader, val_loader, criterion, optimizer, device, config.NUM_EPOCHS, start_epoch, checkpoint_path, scheduler)
     print("Training Complete.")
 
     evaluate_predict(model, test_loader, scaler, y_test_np, device, scaled_data)

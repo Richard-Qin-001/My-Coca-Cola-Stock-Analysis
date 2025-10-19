@@ -63,14 +63,21 @@ def load_and_preprocess_data(data_file, start_date):
 
     X_np, y_np = create_sequences(scaled_data, config.SEQUENCE_LENGTH)
 
-    train_size = int(len(X_np) * config.TRAIN_RATIO)
+    # train_size = int(len(X_np) * config.TRAIN_RATIO)
+    N = len(X_np)
+    train_val_size = int(N * config.TRAIN_RATIO)
+    val_size = int(train_val_size * config.VALIDATION_RATIO)
+    train_size_final = train_val_size - val_size
 
     # Use List Slice
-    X_train_np = X_np[:train_size]
-    y_train_np = y_np[:train_size]
+    X_train_np = X_np[:train_size_final]
+    y_train_np = y_np[:train_size_final]
 
-    X_test_np = X_np[train_size:]
-    y_test_np = y_np[train_size:]
+    X_val_np = X_np[train_size_final : train_val_size]
+    y_val_np = y_np[train_size_final : train_val_size]
+
+    X_test_np = X_np[train_val_size:]
+    y_test_np = y_np[train_val_size:]
 
     print(f"\nThe size of Training Set: {len(X_train_np)}")
     print(f"The size of Testing Set: {len(X_test_np)}")
@@ -78,13 +85,16 @@ def load_and_preprocess_data(data_file, start_date):
     # Transform
     X_train_tensor = torch.from_numpy(X_train_np).float()
     y_train_tensor = torch.from_numpy(y_train_np).float()
+    X_val_tensor = torch.from_numpy(X_val_np).float()
+    y_val_tensor = torch.from_numpy(y_val_np).float()
     X_test_tensor = torch.from_numpy(X_test_np).float()
     y_test_tensor = torch.from_numpy(y_test_np).float()
 
     
     train_dataset = StockDataset(X_train_tensor, y_train_tensor)
+    val_dataset = StockDataset(X_val_tensor, y_val_tensor)
     test_dataset = StockDataset(X_test_tensor, y_test_tensor)
 
     input_size = scaled_data.shape[1]
     
-    return train_dataset, test_dataset, scaler, scaled_data, input_size, y_test_np
+    return train_dataset, val_dataset, test_dataset, scaler, scaled_data, input_size, y_test_np
